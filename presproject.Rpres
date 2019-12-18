@@ -1,0 +1,52 @@
+Project
+========================================================
+author: Richard Loeur & Arnaud Lemoine & Antoine Cremel
+date: 18/12/2019
+autosize: true
+
+- The URL of the deployed shiny app : 
+
+- The URL of the pushed code on github :   
+
+- The URL of the presentation on Rpubs : 
+
+Transport Project
+========================================================
+
+Our datasets:
+
+- SNCF train dataset (they used to have train I guess) 
+```{r}
+
+```
+This dataset contain lines that discribe a train line so we have the train departure and arrival stations, the journey time (in minutes) and some more information like delay, cancelation...
+
+- 2015 US flights 
+```{r}
+
+```
+This dataset is representing all the fligths in the US for the year 2015. It contain the fligth number, the airline, the departure and arrival airport as well as the date et information about the distance or delay and more.
+
+Summary of the Train Dataset
+========================================================
+
+```{r, echo=FALSE}
+full_trains <- read.csv("~/ECE/SI_S3/Data Analytics/Projet/project - Copie/french-sncf-train-regularties/french-sncf-trains-regularities/full_trains.csv")
+summary(full_trains)
+```
+
+Summary of the Flights Dataset
+========================================================
+
+```{r, echo=FALSE}
+flights <- read.csv("~/ECE/SI_S3/Data Analytics/Projet/project - Copie/usa-flight-delays/flights.csv")
+summary(flights)
+```
+
+
+What we can learn from the Flights Dataset
+========================================================
+
+We can see that the most popular Airlines in the US in 2015 where Southwest Airlines Co. with 1 261 855 fligths that year. The second one is American Airlines Inc. with 725 984 flights.
+Unsurprinsing is the fact that Southwest Airlines is also the airline with the most delayed flights with 646 569.
+
