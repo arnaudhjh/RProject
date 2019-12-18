@@ -15,7 +15,7 @@ library (reshape2)
 full_trains <- read.csv(file = "french-sncf-train-regularties/french-sncf-trains-regularities/full_trains.csv", header=TRUE, sep=",")
 #mens_trains <- read.csv(file = "french-sncf-train-regularties/french-sncf-trains-regularities/regularite-mensuelle-tgv-aqst.csv", header=TRUE, sep=";",nrows=1000)
 airports <- read.csv(file="usa-flight-delays/airports.csv", header=TRUE, sep=",",nrows=200)
-airports <- read.csv(file="usa-flight-delays/flights.csv", header=TRUE, sep=",",nrows=200)
+flights <- read.csv(file="usa-flight-delays/flights.csv", header=TRUE, sep=",",nrows=200)
 
 flights[["ELAPSED_TIME"]][is.na(flights[["ELAPSED_TIME"]])] <- 0
 flights[["DEPARTURE_DELAY"]][is.na(flights[["DEPARTURE_DELAY"]])] <- 0
@@ -51,9 +51,9 @@ ui <- navbarPage( "Navigation",
                   tabPanel("Total Dist. per airline",
                            tableOutput("total_distance_per_airline")),
                   tabPanel("Mean Dep. delay per airline",
-                           tableOutput("mean_depdelay_per_airline")),
+                           tableOutput("average_depdelay_per_airline")),
                   tabPanel("Mean Arr. delay per airline",
-                           tableOutput("mean_arrdelay_per_airline"))
+                           tableOutput("average_arrdelay_per_airline"))
       )),
       #conditionalPanel("input.radio == 2",textInput("Oui","oui"))
     
@@ -72,9 +72,9 @@ ui <- navbarPage( "Navigation",
                                    tabPanel("Total Dist. per dep. airport",
                                             tableOutput("total_distance_per_dep")),
                                    tabPanel("Mean Dep. delay per dep. airport",
-                                            tableOutput("mean_depdelay_per_dep")),
+                                            tableOutput("average_depdelay_per_dep")),
                                    tabPanel("Mean Arr. delay per dep. airport",
-                                            tableOutput("mean_arrdelay_per_dep"))
+                                            tableOutput("average_arrdelay_per_dep"))
                        ))
       
       #plotOutput("petdriPlot",click = "plot_click")
@@ -99,6 +99,8 @@ ui <- navbarPage( "Navigation",
                               textOutput("value8"),
                               textOutput("value9"),
                               textOutput("value10"),
+                              
+                              textOutput("value11"),
                               selectInput("cause_choice", "Cause:",
                                           c("External cause" = "delay_cause_external_cause",
                                             "Rail Infrastructure" = "delay_cause_rail_infrastructure",
@@ -107,8 +109,35 @@ ui <- navbarPage( "Navigation",
                                             "Station Management "= "delay_cause_station_management",
                                             "Travelers"="delay_cause_travelers"
                                             
-                                            ))),
-                              #textOutput("value11"))
+                                          )),
+                              textOutput("value12"),
+                              ),
+             conditionalPanel("input.radiosncf==2",
+                              selectInput("dep_choice", "Departure Station:",
+                                          unique(true_trains$departure_station)),
+                              textOutput("value13"),
+                              textOutput("value14"),
+                              textOutput("value15"),
+                              textOutput("value16"),
+                              textOutput("value17"),
+                              textOutput("value18"),
+                              textOutput("value19"),
+                              textOutput("value20"),
+                              textOutput("value21"),
+                              textOutput("value22"),
+                              textOutput("value23"),
+                              selectInput("cause_choice2", "Cause:",
+                                          c("External cause" = "delay_cause_external_cause",
+                                            "Rail Infrastructure" = "delay_cause_rail_infrastructure",
+                                            "Traffic management" = "delay_cause_traffic_management",
+                                            "Rolling Stock" = "delay_cause_rolling_stock",
+                                            "Station Management "= "delay_cause_station_management",
+                                            "Travelers"="delay_cause_travelers"
+                                            
+                                          )),
+                              textOutput("value24"),
+                              )
+             
              
              
              
@@ -131,13 +160,15 @@ server <- function(input, output) {
   output$value2 <- renderText(
     {
       year_choosen <-input$year_choice
-      paste("2 : The total number of delayed trains at departure :",nrow(true_trains[true_trains$year==(as.integer(year_choosen))&true_trains$num_late_at_departure>0,]))
+      temp<-true_trains[true_trains$year==(as.integer(year_choosen)),]
+      paste("2 : The total number of delayed trains at departure :",sum(temp$num_late_at_departure),"trains")
     }
   )
   output$value3 <- renderText(
     {
       year_choosen <-input$year_choice
-      paste("3 : The total number of delayed trains at arrival :",nrow(true_trains[true_trains$year==(as.integer(year_choosen))&true_trains$num_arriving_late>0,]))
+      temp<-true_trains[true_trains$year==(as.integer(year_choosen)),]
+      paste("2 : The total number of delayed trains at departure :",sum(temp$num_arriving_late),"trains")
     }
   )
   output$value4 <- renderText(
@@ -160,6 +191,7 @@ server <- function(input, output) {
       paste("The average number of delayed trains at arrival :",tot_train_del/del_arr_train)
     }
   )
+  
   
   output$value6 <- renderText(
     {
@@ -202,7 +234,7 @@ server <- function(input, output) {
     }
   )
   
-  output$value10 <- renderText(
+  output$value11 <- renderText(
     {
       year_choosen <-input$year_choice
       temp<-true_trains[true_trains$year==(as.integer(year_choosen)),]
@@ -211,21 +243,139 @@ server <- function(input, output) {
       paste("10 : The percentage (proportion) of cancelled trains :",(canceled_train/total_train)*100,"percent")
     }
   )
-  output$value11 <- renderText(
+  output$value12 <- renderText(
     {
       year_choosen <-input$year_choice
       temp<-true_trains[true_trains$year==(as.integer(year_choosen)),]
-      canceled_train <-sum(temp$num_of_canceled_trains)
-      total_train <-sum(temp$total_num_trips)
-      paste("11 : The percentage (proportion) of delay causes :",(canceled_train/total_train)*100,"percent")
+      cause <- as.character(input$cause_choice)
+      
+      ouioui<-melt(temp,id.vars=c("year"),measure.vars=c("delay_cause_external_cause","delay_cause_rail_infrastructure","delay_cause_traffic_management",
+                                                         "delay_cause_rolling_stock","delay_cause_station_management","delay_cause_travelers"))
+      paste("11 : The percentage (proportion) of delay causes :",(nrow(ouioui[ouioui$variable==cause&ouioui$value>0,])/nrow(ouioui))*100,"percent")
+      
     }
   )
   
+  
+  ########################################################################################################################################################
+  
+  output$value13 <- renderText(
+    {
+      dep_station <-as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      paste("1 : The total number of trains that have been carried out :",sum(temp$total_num_trips)-sum(temp$num_of_canceled_trains),"trains")
+      
+    }
+  )
+  output$value14 <- renderText(
+    {
+      dep_station <-as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      paste("2 : The total number of delayed trains at departure :",sum(temp$num_late_at_departure),"trains")
+    }
+  )
+  output$value15 <- renderText(
+    {
+      dep_station <-as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      temp[["num_arriving_late"]][is.na(temp[["num_arriving_late"]])] <- 0
+      paste("3 : The total number of delayed trains at arrival :",sum(temp$num_arriving_late),"trains")
+    }
+  )
+  output$value16 <- renderText(
+    {
+      dep_station <-as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      tot_train_del= sum(temp$total_num_trips)
+      #del_dep_train=nrow(true_trains[true_trains$year==(as.integer(year_choosen))&true_trains$num_late_at_departure>0,])
+      
+      del_dep_train = sum(temp$num_late_at_departure)
+      paste("4 : The average number of delayed trains at departure :",tot_train_del/del_dep_train, "trains")
+    }
+  )
+  output$value17 <- renderText(
+    {
+      dep_station <-as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      tot_train_del= sum(temp$total_num_trips)
+      del_arr_train=sum(temp$num_arriving_late)
+      paste("5 :The average number of delayed trains at arrival :",tot_train_del/del_arr_train,"trains")
+    }
+  )
+  
+  output$value18 <- renderText(
+    {
+      dep_station <-as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      
+      paste("6 : The total average departure delay time of all trains :",sum(temp$avg_delay_all_departing), "minutes")
+    }
+  )
+  output$value19 <- renderText(
+    {
+      dep_station <-as.character(input$dep_choice)
+      
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      
+      paste("7 : The total average arrival delay time of all trains :",sum(temp$avg_delay_all_arriving), "minutes")
+      
+    }
+  )
+  output$value20 <- renderText(
+    {
+      dep_station <- as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      temp[["avg_delay_all_departing"]][is.na(temp[["avg_delay_all_departing"]])] <- 0
+      paste("8 : The average departure delay time of delayed trains :",sum(temp$avg_delay_all_departing)/nrow(temp), "minutes")
+    }
+  )
+  
+  output$value21 <- renderText(
+    {
+      dep_station <- as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      temp[["avg_delay_all_arriving"]][is.na(temp[["avg_delay_all_arriving"]])] <- 0
+      paste("9 : The average arrival delay time of delayed trains :",sum(temp$avg_delay_all_arriving)/nrow(temp),"minutes")
+    }
+  )
+  output$value22 <- renderText(
+    {
+      dep_station <- as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      paste("10 : The total number of cancelled trains :",sum(temp$num_of_canceled_trains),"trains")
+    }
+  )
+  
+  output$value23 <- renderText(
+    {
+      dep_station <- as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      canceled_train <-sum(temp$num_of_canceled_trains)
+      total_train <-sum(temp$total_num_trips)
+      paste("11 : The percentage (proportion) of cancelled trains :",(canceled_train/total_train)*100,"percent")
+    }
+  )
+  output$value24 <- renderText(
+    {
+      dep_station <- as.character(input$dep_choice)
+      temp<-true_trains[true_trains$departure_station==dep_station,]
+      
+      cause <- as.character(input$cause_choice2)
+      
+      ouioui<-melt(temp,id.vars=c("year"),measure.vars=c("delay_cause_external_cause","delay_cause_rail_infrastructure","delay_cause_traffic_management",
+                                                         "delay_cause_rolling_stock","delay_cause_station_management","delay_cause_travelers"))
+      
+      paste("12 : The percentage (proportion) of delay causes :",(nrow(ouioui[ouioui$variable==cause&ouioui$value>0,])/nrow(ouioui))*100,"percent")
+      
+    }
+  )
   ########################################################
   ########################################################
   output$mymap <- renderLeaflet({
+    
     leaflet(data = ap_coord) %>% addTiles() %>%
-      addMarkers(~LONGITUDE, ~LATITUDE)
+    addMarkers(~LONGITUDE, ~LATITUDE)
+    
   })
   
 
